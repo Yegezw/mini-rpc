@@ -34,6 +34,9 @@ public class ZookeeperRegistryService implements RegistryService {
         this.serviceDiscovery.start();
     }
 
+    /**
+     * 注册服务
+     */
     @Override
     public void register(ServiceMeta serviceMeta) throws Exception {
         ServiceInstance<ServiceMeta> serviceInstance = ServiceInstance
@@ -46,11 +49,14 @@ public class ZookeeperRegistryService implements RegistryService {
         serviceDiscovery.registerService(serviceInstance);
     }
 
+    /**
+     * 注销服务
+     */
     @Override
     public void unRegister(ServiceMeta serviceMeta) throws Exception {
         ServiceInstance<ServiceMeta> serviceInstance = ServiceInstance
                 .<ServiceMeta>builder()
-                .name(serviceMeta.getServiceName())
+                .name(RpcServiceHelper.buildServiceKey(serviceMeta.getServiceName(), serviceMeta.getServiceVersion()))
                 .address(serviceMeta.getServiceAddr())
                 .port(serviceMeta.getServicePort())
                 .payload(serviceMeta)
@@ -58,6 +64,9 @@ public class ZookeeperRegistryService implements RegistryService {
         serviceDiscovery.unregisterService(serviceInstance);
     }
 
+    /**
+     * 发现服务
+     */
     @Override
     public ServiceMeta discovery(String serviceName, int invokerHashCode) throws Exception {
         Collection<ServiceInstance<ServiceMeta>> serviceInstances = serviceDiscovery.queryForInstances(serviceName);

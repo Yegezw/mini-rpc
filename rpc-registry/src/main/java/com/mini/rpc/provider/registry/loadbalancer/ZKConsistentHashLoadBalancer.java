@@ -8,7 +8,13 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class ZKConsistentHashLoadBalancer implements ServiceLoadBalancer<ServiceInstance<ServiceMeta>> {
+    /**
+     * 虚拟节点大小
+     */
     private final static int VIRTUAL_NODE_SIZE = 10;
+    /**
+     * 虚拟节点分割
+     */
     private final static String VIRTUAL_NODE_SPLIT = "#";
 
     @Override
@@ -17,6 +23,9 @@ public class ZKConsistentHashLoadBalancer implements ServiceLoadBalancer<Service
         return allocateNode(ring, hashCode);
     }
 
+    /**
+     * 分配节点
+     */
     private ServiceInstance<ServiceMeta> allocateNode(TreeMap<Integer, ServiceInstance<ServiceMeta>> ring, int hashCode) {
         Map.Entry<Integer, ServiceInstance<ServiceMeta>> entry = ring.ceilingEntry(hashCode);
         if (entry == null) {
@@ -25,9 +34,13 @@ public class ZKConsistentHashLoadBalancer implements ServiceLoadBalancer<Service
         return entry.getValue();
     }
 
+    /**
+     * 制作一致性哈希环
+     */
     private TreeMap<Integer, ServiceInstance<ServiceMeta>> makeConsistentHashRing(List<ServiceInstance<ServiceMeta>> servers) {
         TreeMap<Integer, ServiceInstance<ServiceMeta>> ring = new TreeMap<>();
         for (ServiceInstance<ServiceMeta> instance : servers) {
+            // 每个实例 10 个虚拟节点 [ hash(地址:端口#i) -> instance ] TODO Guava#MurmurHash
             for (int i = 0; i < VIRTUAL_NODE_SIZE; i++) {
                 ring.put((buildServiceInstanceKey(instance) + VIRTUAL_NODE_SPLIT + i).hashCode(), instance);
             }

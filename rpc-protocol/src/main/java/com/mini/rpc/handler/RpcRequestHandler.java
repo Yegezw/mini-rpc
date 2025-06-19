@@ -25,25 +25,27 @@ public class RpcRequestHandler extends SimpleChannelInboundHandler<MiniRpcProtoc
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, MiniRpcProtocol<MiniRpcRequest> protocol) {
-        RpcRequestProcessor.submitRequest(() -> {
-            MiniRpcProtocol<MiniRpcResponse> resProtocol = new MiniRpcProtocol<>();
-            MiniRpcResponse response = new MiniRpcResponse();
-            MsgHeader header = protocol.getHeader();
-            header.setMsgType((byte) MsgType.RESPONSE.getType());
-            try {
-                Object result = handle(protocol.getBody());
-                response.setData(result);
+        RpcRequestProcessor.submitRequest(
+                () -> {
+                    MiniRpcProtocol<MiniRpcResponse> resProtocol = new MiniRpcProtocol<>();
+                    MiniRpcResponse response = new MiniRpcResponse(); // 协议体
+                    MsgHeader header = protocol.getHeader();          // 协议头
+                    header.setMsgType((byte) MsgType.RESPONSE.getType());
+                    try {
+                        Object result = handle(protocol.getBody());
+                        response.setData(result);
 
-                header.setStatus((byte) MsgStatus.SUCCESS.getCode());
-                resProtocol.setHeader(header);
-                resProtocol.setBody(response);
-            } catch (Throwable throwable) {
-                header.setStatus((byte) MsgStatus.FAIL.getCode());
-                response.setMessage(throwable.toString());
-                log.error("process request {} error", header.getRequestId(), throwable);
-            }
-            ctx.writeAndFlush(resProtocol);
-        });
+                        header.setStatus((byte) MsgStatus.SUCCESS.getCode());
+                        resProtocol.setHeader(header);
+                        resProtocol.setBody(response);
+                    } catch (Throwable throwable) {
+                        header.setStatus((byte) MsgStatus.FAIL.getCode());
+                        response.setMessage(throwable.toString());
+                        log.error("process request {} error", header.getRequestId(), throwable);
+                    }
+                    ctx.writeAndFlush(resProtocol);
+                }
+        );
     }
 
     private Object handle(MiniRpcRequest request) throws Throwable {
@@ -59,6 +61,7 @@ public class RpcRequestHandler extends SimpleChannelInboundHandler<MiniRpcProtoc
         Class<?>[] parameterTypes = request.getParameterTypes();
         Object[] parameters = request.getParams();
 
+        // TODO 缓存
         FastClass fastClass = FastClass.create(serviceClass);
         int methodIndex = fastClass.getIndex(methodName, parameterTypes);
         return fastClass.invoke(methodIndex, serviceBean, parameters);

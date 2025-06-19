@@ -17,4 +17,3 @@ public class RpcResponseHandler extends SimpleChannelInboundHandler<MiniRpcProto
         future.getPromise().setSuccess(msg.getBody());
     }
 }
-

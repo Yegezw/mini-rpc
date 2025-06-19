@@ -1,4 +1,4 @@
-package com.mini.rpc.consumer;
+package com.mini.rpc.consumer.config;
 
 import com.mini.rpc.common.RpcConstants;
 import com.mini.rpc.consumer.annotation.RpcReference;
@@ -43,6 +43,7 @@ public class RpcConsumerPostProcessor implements ApplicationContextAware, BeanCl
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        // 遍历所有 Bean 的所有属性 field, 对符合条件的属性创建 BeanDefinition
         for (String beanDefinitionName : beanFactory.getBeanDefinitionNames()) {
             BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanDefinitionName);
             String beanClassName = beanDefinition.getBeanClassName();
@@ -52,30 +53,33 @@ public class RpcConsumerPostProcessor implements ApplicationContextAware, BeanCl
             }
         }
 
+        // 注册 BeanDefinition
         BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-        this.rpcRefBeanDefinitions.forEach((beanName, beanDefinition) -> {
-            if (context.containsBean(beanName)) {
-                throw new IllegalArgumentException("spring context already has a bean named " + beanName);
-            }
-            registry.registerBeanDefinition(beanName, rpcRefBeanDefinitions.get(beanName));
-            log.info("registered RpcReferenceBean {} success.", beanName);
-        });
+        this.rpcRefBeanDefinitions.forEach(
+                (beanName, beanDefinition) -> {
+                    if (context.containsBean(beanName)) {
+                        throw new IllegalArgumentException("spring context already has a bean named " + beanName);
+                    }
+                    registry.registerBeanDefinition(beanName, rpcRefBeanDefinitions.get(beanName));
+                    log.info("registered RpcReferenceBean {} success.", beanName);
+                }
+        );
     }
 
     private void parseRpcReference(Field field) {
         RpcReference annotation = AnnotationUtils.getAnnotation(field, RpcReference.class);
-        if (annotation != null) {
-            BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(RpcReferenceBean.class);
-            builder.setInitMethodName(RpcConstants.INIT_METHOD_NAME);
-            builder.addPropertyValue("interfaceClass", field.getType());
-            builder.addPropertyValue("serviceVersion", annotation.serviceVersion());
-            builder.addPropertyValue("registryType", annotation.registryType());
-            builder.addPropertyValue("registryAddr", annotation.registryAddress());
-            builder.addPropertyValue("timeout", annotation.timeout());
+        if (annotation == null) return;
 
-            BeanDefinition beanDefinition = builder.getBeanDefinition();
-            rpcRefBeanDefinitions.put(field.getName(), beanDefinition);
-        }
+        BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(RpcReferenceBean.class);
+        builder.setInitMethodName(RpcConstants.INIT_METHOD_NAME);
+        builder.addPropertyValue("interfaceClass", field.getType());
+        builder.addPropertyValue("serviceVersion", annotation.serviceVersion());
+        builder.addPropertyValue("registryType", annotation.registryType());
+        builder.addPropertyValue("registryAddr", annotation.registryAddress());
+        builder.addPropertyValue("timeout", annotation.timeout());
+
+        BeanDefinition beanDefinition = builder.getBeanDefinition();
+        rpcRefBeanDefinitions.put(field.getName(), beanDefinition);
     }
 
 }

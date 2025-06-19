@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+ <trees>
+     <tree path="/rpc-provider" title="提供者"/>
+     <tree path="/rpc-consumer" title="消费者"/>
+     <tree path="/rpc-registry" title="注册中心"/>
+     <tree path="/rpc-protocol" title="网络通信"/>
+     <tree path="/rpc-core" title="基础"/>
+     <tree path="/rpc-facade" title="服务接口"/>
+ </trees>

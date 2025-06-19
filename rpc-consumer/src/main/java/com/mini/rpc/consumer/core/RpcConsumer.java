@@ -1,4 +1,4 @@
-package com.mini.rpc.consumer;
+package com.mini.rpc.consumer.core;
 
 import com.mini.rpc.codec.MiniRpcDecoder;
 import com.mini.rpc.codec.MiniRpcEncoder;
@@ -45,19 +45,19 @@ public class RpcConsumer {
 
         int invokerHashCode = params.length > 0 ? params[0].hashCode() : serviceKey.hashCode();
         ServiceMeta serviceMetadata = registryService.discovery(serviceKey, invokerHashCode);
+        if (serviceMetadata == null) return;
 
-        if (serviceMetadata != null) {
-            ChannelFuture future = bootstrap.connect(serviceMetadata.getServiceAddr(), serviceMetadata.getServicePort()).sync();
-            future.addListener((ChannelFutureListener) arg0 -> {
-                if (future.isSuccess()) {
-                    log.info("connect rpc server {} on port {} success.", serviceMetadata.getServiceAddr(), serviceMetadata.getServicePort());
-                } else {
-                    log.error("connect rpc server {} on port {} failed.", serviceMetadata.getServiceAddr(), serviceMetadata.getServicePort());
-                    future.cause().printStackTrace();
-                    eventLoopGroup.shutdownGracefully();
+        ChannelFuture future = bootstrap.connect(serviceMetadata.getServiceAddr(), serviceMetadata.getServicePort()).sync();
+        future.addListener(
+                (ChannelFutureListener) arg0 -> {
+                    if (future.isSuccess()) {
+                        log.info("connect rpc server {} on port {} success.", serviceMetadata.getServiceAddr(), serviceMetadata.getServicePort());
+                    } else {
+                        log.error("connect rpc server {} on port {} failed.", serviceMetadata.getServiceAddr(), serviceMetadata.getServicePort(), future.cause());
+                        eventLoopGroup.shutdownGracefully();
+                    }
                 }
-            });
-            future.channel().writeAndFlush(protocol);
-        }
+        );
+        future.channel().writeAndFlush(protocol);
     }
 }

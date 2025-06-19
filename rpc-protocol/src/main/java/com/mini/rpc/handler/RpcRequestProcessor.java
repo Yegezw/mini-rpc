@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class RpcRequestProcessor {
-    private static ThreadPoolExecutor threadPoolExecutor;
+    private static volatile ThreadPoolExecutor threadPoolExecutor;
 
     public static void submitRequest(Runnable task) {
         if (threadPoolExecutor == null) {

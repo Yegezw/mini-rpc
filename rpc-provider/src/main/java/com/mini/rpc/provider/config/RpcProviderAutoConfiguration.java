@@ -1,4 +1,4 @@
-package com.mini.rpc.provider;
+package com.mini.rpc.provider.config;
 
 import com.mini.rpc.common.RpcProperties;
 import com.mini.rpc.provider.registry.RegistryFactory;

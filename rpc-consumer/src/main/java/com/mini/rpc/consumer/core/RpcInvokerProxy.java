@@ -1,4 +1,4 @@
-package com.mini.rpc.consumer;
+package com.mini.rpc.consumer.core;
 
 import com.mini.rpc.common.MiniRpcFuture;
 import com.mini.rpc.common.MiniRpcRequest;
@@ -19,8 +19,17 @@ import java.util.concurrent.TimeUnit;
 
 public class RpcInvokerProxy implements InvocationHandler {
 
+    /**
+     * 服务版本
+     */
     private final String serviceVersion;
+    /**
+     * 超时时间
+     */
     private final long timeout;
+    /**
+     * 服务注册
+     */
     private final RegistryService registryService;
 
     public RpcInvokerProxy(String serviceVersion, long timeout, RegistryService registryService) {
@@ -32,6 +41,8 @@ public class RpcInvokerProxy implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         MiniRpcProtocol<MiniRpcRequest> protocol = new MiniRpcProtocol<>();
+
+        // 协议头
         MsgHeader header = new MsgHeader();
         long requestId = MiniRpcRequestHolder.REQUEST_ID_GEN.incrementAndGet();
         header.setMagic(ProtocolConstants.MAGIC);
@@ -42,6 +53,7 @@ public class RpcInvokerProxy implements InvocationHandler {
         header.setStatus((byte) 0x1);
         protocol.setHeader(header);
 
+        // 协议体
         MiniRpcRequest request = new MiniRpcRequest();
         request.setServiceVersion(this.serviceVersion);
         request.setClassName(method.getDeclaringClass().getName());
@@ -56,7 +68,6 @@ public class RpcInvokerProxy implements InvocationHandler {
         rpcConsumer.sendRequest(protocol, this.registryService);
 
         // TODO hold request by ThreadLocal
-
 
         return future.getPromise().get(future.getTimeout(), TimeUnit.MILLISECONDS).getData();
     }
